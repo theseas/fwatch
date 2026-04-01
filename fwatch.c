@@ -24,7 +24,7 @@ int handle_file(const char *fpath, const struct stat *sb, int typeflag, struct F
 
 int main(int argc, char* argv[]) {
 	// quick and dirty version
-	// TODO: handle varioous errors and unsafe handlings
+	// TODO: handle various errors and unsafe handlings
 	if (argc != 3) {
 		printf("Wrong arguments number: %d\n", argc);
 		return 1;
