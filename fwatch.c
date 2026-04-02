@@ -12,10 +12,12 @@
 #include <fnmatch.h>
 #include <fcntl.h>
 
+#define NUM_OF_EVENTS 128
+
 struct Arguments {
 	char *filename;
 	char *command;
-} arguments;
+};
 
 // int handle_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
 // 	// printf("%lu: %s\n", sb->st_ino, fpath);
@@ -27,23 +29,34 @@ struct Arguments {
 // 	return 0;
 // }
 
-
-int main(int argc, char* argv[]) {
-	struct stat file_stat = {0};
-	struct inotify_event event =  {0};
-	char buf[4096] __attribute__ ((aligned(__alignof__(struct inotify_event))));
-
-	int inotify_fd = inotify_init();
-
+void parse_arguments(struct Arguments *arguments, int argc, char *argv[]) {
 	// quick and dirty version
 	// TODO: handle various errors and unsafe handlings
 	if (argc != 3) {
 		printf("Wrong arguments number: %d\n", argc);
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 	printf("1: %s\n2: %s\n", argv[1], argv[2]);
-	arguments.filename = argv[1];
-	arguments.command = argv[2];
+	arguments->filename = argv[1];
+	arguments->command = argv[2];
+}
+
+int main(int argc, char *argv[]) {
+	struct Arguments arguments;
+	struct stat file_stat = {0};
+	struct inotify_event event =  {0};
+	size_t filename_len = 0;
+	char *buffer = NULL;
+
+	parse_arguments(&arguments, argc, argv);
+	filename_len = strlen(arguments.filename);
+
+	// char buf[4096] __attribute__ ((aligned(__alignof__(struct inotify_event))));
+
+	buffer = calloc(NUM_OF_EVENTS, sizeof(struct inotify_event) + filename_len);
+
+	int inotify_fd = inotify_init();
+
 	
 	if (lstat(arguments.filename, &file_stat) == -1) {
 		perror("lstat");
@@ -66,6 +79,7 @@ int main(int argc, char* argv[]) {
 	if (watch_descriptor == -1) {
 		fprintf(stderr, "Cannot watch '%s': %s\n",
                            arguments.filename, strerror(errno));
+		close(inotify_fd);
 		return EXIT_FAILURE;
 	}
 
